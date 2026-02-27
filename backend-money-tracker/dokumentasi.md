@@ -280,6 +280,7 @@ mongodb+srv://<username>:<password>@cluster0.xxxxx.mongodb.net/<dbname>?retryWri
 Ganti `<username>`, `<password>`, dan `<dbname>` dengan nilai asli:
 
 ```env
+contoh:
 MONGO_URI=mongodb+srv://budi:password123@cluster0.abc12.mongodb.net/money-tracker?retryWrites=true&w=majority
 ```
 
