@@ -1,180 +1,102 @@
-import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import api from "../services/api";
+import { useState, useEffect, useCallback } from 'react';
+import api from '../services/api';
+import Navbar from '../components/layout/Navbar';
+import SummaryCard from '../components/summary/SummaryCard';
+import TransactionForm from '../components/transaction/TransactionForm';
+import TransactionList from '../components/transaction/TransactionList';
+import styles from './Dashboard.module.css';
+
+const INITIAL_FORM = { title: '', amount: '', type: 'income' };
 
 export default function Dashboard() {
-    const navigate = useNavigate();
-
-    // state untuk menyimpan transaksi
     const [transactions, setTransactions] = useState([]);
-
-    // state menyimpan saldo
-    const [balance, setBalance] = useState(0);
-
-    // state loading
+    const [summary, setSummary] = useState({ income: 0, expense: 0, total_balance: 0 });
     const [loading, setLoading] = useState(true);
-
-    const [form, setForm] = useState({
-        title: "",
-        amount: "",
-        type: "income"
-    });
-
-    // state Edit
+    const [form, setForm] = useState(INITIAL_FORM);
     const [editingId, setEditingId] = useState(null);
 
-    // Fungsi untuk fetch data dari backend
-    const fetchData = async () => {
+    const fetchData = useCallback(async () => {
         try {
-            const trxResponse = await api.get("/transactions")
-            const summaryResponse = await api.get("/transactions/summary")
-
-            //  menyimpan ke state
-            setTransactions(trxResponse.data.data)
-            setBalance(summaryResponse.data.total_balance)
+            const [trxRes, summaryRes] = await Promise.all([
+                api.get('/transactions'),
+                api.get('/transactions/summary')
+            ]);
+            setTransactions(trxRes.data.data);
+            setSummary(summaryRes.data.data);
         } catch (error) {
-            console.error("Error fetching data:", error);
+            console.error('Error fetching data:', error);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
-    // Fungsi untuk submit transaksi baru atau update
+    useEffect(() => {
+        fetchData();
+    }, [fetchData]);
+
     const handleSubmit = async (e) => {
         e.preventDefault();
+        const payload = { title: form.title, amount: Number(form.amount), type: form.type };
 
         try {
             if (editingId) {
-                // Mode edit: update transaksi
-                await api.put(`/transactions/${editingId}`, {
-                    title: form.title,
-                    amount: Number(form.amount),
-                    type: form.type
-                });
-                setEditingId(null);
+                await api.put(`/transactions/${editingId}`, payload);
             } else {
-                // Mode tambah: create transaksi baru
-                await api.post('/transactions', {
-                    title: form.title,
-                    amount: Number(form.amount),
-                    type: form.type
-                });
+                await api.post('/transactions', payload);
             }
-
-            // reset form
-            setForm({
-                title: "",
-                amount: "",
-                type: "income"
-            });
-
-            // fetch ulang data supaya tampilan terupdate
+            setForm(INITIAL_FORM);
+            setEditingId(null);
             fetchData();
         } catch (error) {
-            console.error("Error adding transaction:", error);
+            console.error('Error saving transaction:', error);
         }
     };
 
-    // Fungsi untuk mengisi form dengan data transaksi yang mau di-edit
     const handleEdit = (trx) => {
         setEditingId(trx._id);
-        setForm({
-            title: trx.title,
-            amount: trx.amount,
-            type: trx.type
-        });
+        setForm({ title: trx.title, amount: trx.amount, type: trx.type });
     };
 
-    // Fungsi untuk membatalkan edit
     const handleCancelEdit = () => {
         setEditingId(null);
-        setForm({
-            title: "",
-            amount: "",
-            type: "income"
-        });
+        setForm(INITIAL_FORM);
     };
 
     const handleDelete = async (id) => {
+        if (!window.confirm('Yakin ingin menghapus transaksi ini?')) return;
         try {
             await api.delete(`/transactions/${id}`);
             fetchData();
         } catch (error) {
-            console.error("Error deleting transaction:", error);
+            console.error('Error deleting transaction:', error);
         }
-    }
-
-    // Fungsi untuk logout
-    const handleLogout = () => {
-        localStorage.removeItem("access_token");
-        navigate("/");
     };
 
-    // useEffect dijalankan saat komponen pertama kali muncul
-    useEffect(() => {
-        fetchData();
-    }, []);
-
-    if (loading) {
-        return <h2>Loading...</h2>
-    }
+    if (loading) return <div className={styles.loading}>Loading...</div>;
 
     return (
-        <div>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <h2>Dashboard</h2>
-                <button onClick={handleLogout}>Logout</button>
-            </div>
-
-            <h3>Total Balance: Rp {balance}</h3>
-
-            {/* Form untuk tambah/edit transaksi */}
-            <h3>{editingId ? "Edit Transaction" : "Add Transaction"}</h3>
-            <form onSubmit={handleSubmit}>
-                <input
-                    placeholder="Title"
-                    value={form.title}
-                    onChange={(e) => setForm({ ...form, title: e.target.value })}
+        <div className={styles.page}>
+            <Navbar />
+            <main className={styles.content}>
+                <SummaryCard
+                    balance={summary.total_balance}
+                    income={summary.income}
+                    expense={summary.expense}
                 />
-                <br />
-                <input
-                    type="number"
-                    placeholder="Amount"
-                    value={form.amount}
-                    onChange={(e) => setForm({ ...form, amount: e.target.value })}
+                <TransactionForm
+                    form={form}
+                    editingId={editingId}
+                    onChange={setForm}
+                    onSubmit={handleSubmit}
+                    onCancel={handleCancelEdit}
                 />
-                <br />
-                <select
-                    value={form.type}
-                    onChange={(e) => setForm({ ...form, type: e.target.value })}
-                >
-                    <option value="income">Income</option>
-                    <option value="expense">Expense</option>
-                </select>
-                <br />
-                <button type="submit">{editingId ? "Update" : "Add"}</button>
-                {editingId && (
-                    <button type="button" onClick={handleCancelEdit}>Cancel</button>
-                )}
-            </form>
-
-            <h3>Transactions:</h3>
-
-            {transactions.length === 0 ? (
-                <p>No transactions yet</p>
-            ) : (
-                <ul>
-                    {transactions.map((trx) => (
-                        <li key={trx._id}>
-                            {trx.title} - Rp {trx.amount} ({trx.type})
-
-                            <button onClick={() => handleEdit(trx)}>Edit</button>
-                            <button onClick={() => handleDelete(trx._id)}>Delete</button>
-
-                        </li>
-                    ))}
-                </ul>
-            )}
+                <h3 className={styles.listTitle}>Transactions</h3>
+                <TransactionList
+                    transactions={transactions}
+                    onEdit={handleEdit}
+                    onDelete={handleDelete}
+                />
+            </main>
         </div>
     );
 }

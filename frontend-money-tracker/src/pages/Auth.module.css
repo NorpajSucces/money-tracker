@@ -1,0 +1,108 @@
+/* Shared auth page styles: Login & Register */
+
+.page {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background-color: #181825;
+    padding: 1rem;
+}
+
+.card {
+    background-color: #1e1e2e;
+    border: 1px solid #313244;
+    border-radius: 16px;
+    padding: 2rem;
+    width: 100%;
+    max-width: 400px;
+}
+
+.title {
+    margin: 0 0 0.25rem;
+    font-size: 1.4rem;
+    font-weight: 700;
+    color: #cdd6f4;
+    text-align: center;
+}
+
+.subtitle {
+    margin: 0 0 1.5rem;
+    font-size: 0.85rem;
+    color: #6c7086;
+    text-align: center;
+}
+
+.form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+
+.input {
+    padding: 0.7rem 1rem;
+    border-radius: 8px;
+    border: 1px solid #45475a;
+    background-color: #181825;
+    color: #cdd6f4;
+    font-size: 0.9rem;
+    outline: none;
+    transition: border-color 0.2s;
+}
+
+.input:focus {
+    border-color: #89b4fa;
+}
+
+.input::placeholder {
+    color: #585b70;
+}
+
+.error {
+    margin: 0;
+    padding: 0.5rem 0.75rem;
+    background-color: #2d1e22;
+    border: 1px solid #f38ba8;
+    border-radius: 6px;
+    color: #f38ba8;
+    font-size: 0.85rem;
+}
+
+.btn {
+    margin-top: 0.25rem;
+    padding: 0.7rem;
+    background-color: #89b4fa;
+    color: #1e1e2e;
+    border: none;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.95rem;
+    cursor: pointer;
+    transition: opacity 0.2s;
+}
+
+.btn:hover:not(:disabled) {
+    opacity: 0.85;
+}
+
+.btn:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.link {
+    margin: 1rem 0 0;
+    text-align: center;
+    font-size: 0.85rem;
+    color: #6c7086;
+}
+
+.link a {
+    color: #89b4fa;
+    text-decoration: none;
+    font-weight: 500;
+}
+
+.link a:hover {
+    text-decoration: underline;
+}

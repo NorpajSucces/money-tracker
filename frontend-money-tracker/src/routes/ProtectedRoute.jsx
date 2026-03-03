@@ -1,14 +1,11 @@
-import { Navigate } from "react-router-dom";
+import { Navigate } from 'react-router-dom';
+import { useAuth } from '../hooks/useAuth';
 
-export default function ProtectedRoute({children}){
-    //  Mengambil token dari localstorage
-    const token = localStorage.getItem("access_token");
-
-    // Jika tidak ada token, redirect ke halaman login
-    if (!token){
-        return <Navigate to="/" />
-    }
-
-    // Jika ada token, tampilkan halaman yang diminta
-    return children;
+/**
+ * Melindungi route dari akses tanpa autentikasi.
+ * Jika tidak login, redirect ke halaman login.
+ */
+export default function ProtectedRoute({ children }) {
+    const { isAuthenticated } = useAuth();
+    return isAuthenticated ? children : <Navigate to="/" replace />;
 }

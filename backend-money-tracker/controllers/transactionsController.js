@@ -5,9 +5,9 @@ class TransactionsController {
 
     static async getAllTransactions(req, res, next) {
         try {
-            const transactions = await Transaction.find({ userId: req.user._id });
+            const transactions = await Transaction.find({ userId: req.user._id }).sort({ createdAt: -1 });
+
             res.status(200).json({
-                userId: req.user._id,
                 success: true,
                 data: transactions
             });
@@ -18,21 +18,14 @@ class TransactionsController {
 
     static async getTransactionById(req, res, next) {
         try {
-            const { id } = req.params;
-
             const transaction = await Transaction.findOne({
-                _id: id,
+                _id: req.params.id,
                 userId: req.user._id
             });
 
-            if (!transaction) {
-                throw createError('Transaction not found', 404);
-            }
+            if (!transaction) throw createError('Transaction not found', 404);
 
-            res.status(200).json({
-                success: true,
-                data: transaction
-            });
+            res.status(200).json({ success: true, data: transaction });
         } catch (error) {
             next(error);
         }
@@ -50,13 +43,10 @@ class TransactionsController {
                 title,
                 amount,
                 type,
-                userId: req.user.id
+                userId: req.user._id
             });
 
-            res.status(201).json({
-                success: true,
-                data: newTransaction
-            });
+            res.status(201).json({ success: true, data: newTransaction });
         } catch (error) {
             next(error);
         }
@@ -64,25 +54,18 @@ class TransactionsController {
 
     static async updateTransaction(req, res, next) {
         try {
-            const { id } = req.params;
+            // Destructure hanya field yang boleh diubah — cegah overwrite userId/createdAt
+            const { title, amount, type } = req.body;
 
             const updatedTransaction = await Transaction.findOneAndUpdate(
-                { _id: id, userId: req.user._id },
-                req.body,
-                {
-                    new: true,
-                    runValidators: true
-                }
+                { _id: req.params.id, userId: req.user._id },
+                { title, amount, type },
+                { new: true, runValidators: true }
             );
 
-            if (!updatedTransaction) {
-                throw createError('Transaction not found', 404);
-            }
+            if (!updatedTransaction) throw createError('Transaction not found', 404);
 
-            res.status(200).json({
-                success: true,
-                data: updatedTransaction
-            });
+            res.status(200).json({ success: true, data: updatedTransaction });
         } catch (error) {
             next(error);
         }
@@ -90,43 +73,47 @@ class TransactionsController {
 
     static async deleteTransaction(req, res, next) {
         try {
-            const { id } = req.params;
-
             const deletedTransaction = await Transaction.findOneAndDelete({
-                _id: id,
+                _id: req.params.id,
                 userId: req.user._id
             });
 
-            if (!deletedTransaction) {
-                throw createError('Transaction not found', 404);
-            }
+            if (!deletedTransaction) throw createError('Transaction not found', 404);
 
-            res.status(200).json({
-                success: true,
-                data: {}
-            });
+            res.status(200).json({ success: true, message: 'Transaction deleted' });
         } catch (error) {
             next(error);
         }
     }
 
+    // Menggunakan aggregation pipeline — lebih efisien, tidak load semua dokumen ke JS
     static async getSummary(req, res, next) {
         try {
-            const transactions = await Transaction.find({
-                userId: req.user._id
-            });
+            const result = await Transaction.aggregate([
+                { $match: { userId: req.user._id } },
+                {
+                    $group: {
+                        _id: null,
+                        income: {
+                            $sum: { $cond: [{ $eq: ['$type', 'income'] }, '$amount', 0] }
+                        },
+                        expense: {
+                            $sum: { $cond: [{ $eq: ['$type', 'expense'] }, '$amount', 0] }
+                        }
+                    }
+                }
+            ]);
 
-            let total = 0;
-
-            transactions.forEach(trx => {
-                if (trx.type === 'income') total += trx.amount;
-                if (trx.type === 'expense') total -= trx.amount;
-            });
+            const data = result[0] || { income: 0, expense: 0 };
 
             res.json({
-                total_balance: total
+                success: true,
+                data: {
+                    income: data.income,
+                    expense: data.expense,
+                    total_balance: data.income - data.expense
+                }
             });
-
         } catch (error) {
             next(error);
         }

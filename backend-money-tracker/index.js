@@ -5,29 +5,32 @@ setServers(['1.1.1.1', '8.8.8.8']);
 require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
-const cors = require("cors");
-const app = express();
+const cors = require('cors');
 
 const router = require('./routes/index');
 const errorHandler = require('./middlewares/errorHandler');
 
-app.use(cors());
+const app = express();
+
+// Restrict CORS ke origin frontend saja
+app.use(cors({
+  origin: process.env.FRONTEND_URL || 'http://localhost:5173'
+}));
+
 app.use(express.json());
 
-// Menggunakan semua routing yang diatur dari routes/index.js
 app.use('/api', router);
-
 app.use(errorHandler);
 
-// Connect MongoDB
+// Mulai server hanya setelah MongoDB terhubung
 mongoose.connect(process.env.MONGO_URI)
   .then(() => {
-    console.log("MongoDB Connected ✅");
-
+    console.log('MongoDB Connected ✅');
     app.listen(process.env.PORT, () => {
-      console.log(`Server running on port ${process.env.PORT}`);
+      console.log(`Server running on port ${process.env.PORT} 🚀`);
     });
   })
   .catch((err) => {
-    console.error("MongoDB connection failed ❌", err);
+    console.error('MongoDB connection failed ❌', err.message);
+    process.exit(1);
   });
