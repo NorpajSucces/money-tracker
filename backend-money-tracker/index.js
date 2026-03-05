@@ -6,7 +6,8 @@ require('dotenv').config();
 const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
-
+const swaggerUi = require('swagger-ui-express');
+const swaggerSpec = require('./docs/swagger');
 const router = require('./routes/index');
 const errorHandler = require('./middlewares/errorHandler');
 
@@ -19,7 +20,9 @@ app.use(cors({
 
 app.use(express.json());
 
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 app.use('/api', router);
+
 app.use(errorHandler);
 
 // Mulai server hanya setelah MongoDB terhubung

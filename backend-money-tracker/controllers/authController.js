@@ -2,6 +2,8 @@ const User = require('../models/user');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
 const createError = require('../helpers/createError');
+const { OAuth2Client } = require('google-auth-library');
+const client = new OAuth2Client(process.env.GOOGLE_CLIENT_ID)
 
 class AuthController {
 
@@ -63,6 +65,61 @@ class AuthController {
                 access_token: token
             });
 
+        } catch (error) {
+            next(error);
+        }
+    }
+
+    static async googleLogin(req, res, next) {
+        try {
+            const { googleToken } = req.body;
+
+            if (!googleToken) {
+                return res.status(400).json({ success: false, message: 'Google token is missing' });
+            }
+
+            const ticket = await client.verifyIdToken({
+                idToken: googleToken,
+                audience: process.env.GOOGLE_CLIENT_ID,
+            });
+
+            const payload = ticket.getPayload();
+            const { email, name } = payload;
+
+            let user = await User.findOne({ email });
+
+            if (!user) {
+                const randomPassword = Math.random().toString(36).slice(-8) + Math.random().toString(36).slice(-8)
+
+                const hashedPassword = await bcrypt.hash(randomPassword, 10);
+
+                const baseUsername = name.replace(/\s+/g, '').toLowerCase();
+
+                let username = baseUsername;
+
+                let usernameExists = await User.findOne({ username })
+
+                if (usernameExists) {
+                    username = `${baseUsername}${Math.floor(Math.random() * 9000)}`
+                }
+
+                user = await User.create({
+                    username,
+                    email,
+                    password: hashedPassword
+                })
+            }
+
+            const token = jwt.sign(
+                { id: user._id },
+                process.env.JWT_SECRET,
+                { expiresIn: '7d' }
+            );
+
+            res.json({
+                success: true,
+                access_token: token
+            });
         } catch (error) {
             next(error);
         }
