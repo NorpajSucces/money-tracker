@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build:
+      context: ./backend-money-tracker
+      dockerfile: Dockerfile
+    container_name: money_tracker_backend
+    ports:
+      - "3000:3000"         # Mengarahkan port 3000 laptop ke port 3000 container
+    env_file:
+      - ./backend-money-tracker/.env # Otomatis baca env dari komputer Anda
+    volumes:
+      # Sync kode laptop Anda ke dalam container secara realtime (hot-reload)
+      - ./backend-money-tracker:/app
+      - /app/node_modules   # Mengabaikan folder node_modules dari laptop
+    restart: always
+
+  frontend:
+    build:
+      context: ./frontend-money-tracker
+      dockerfile: Dockerfile
+    container_name: money_tracker_frontend
+    ports:
+      - "5173:5173"         # Mengarahkan port 5173 laptop ke port 5173 container
+    env_file:
+      - ./frontend-money-tracker/.env
+    environment:
+      - VITE_API_URL=http://localhost:3000/api
+    volumes:
+      # Sync kode laptop Anda ke dalam container secara realtime
+      - ./frontend-money-tracker:/app
+      - /app/node_modules
+    depends_on:
+      - backend             # Pastikan backend jalan lebih dulu sebelum frontend
+    restart: always
