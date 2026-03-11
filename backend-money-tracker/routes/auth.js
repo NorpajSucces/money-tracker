@@ -2,6 +2,7 @@ const router = require('express').Router();
 const AuthController = require('../controllers/authController');
 // test cicd
 // test cicd 2
+// test cicd 3
 /**
  * @swagger
  * /register:
