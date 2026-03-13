@@ -1,6 +1,6 @@
 # Money Tracker — Fullstack Application
 
-Aplikasi pencatatan keuangan pribadi (income & expense) yang dibangun dengan arsitektur **fullstack** — backend REST API dan frontend React SPA.
+Aplikasi pencatatan keuangan pribadi (income & expense) yang dibangun dengan arsitektur **fullstack** — backend REST API dan frontend React SPA. Ini adalah project based learning, untuk memahami framework javascript.
 
 ## Fitur Utama
 
@@ -89,3 +89,4 @@ npm run dev                  # Buka di http://localhost:5173
 - Gunakan `.env.example` sebagai template untuk developer lain.
 - Pastikan MongoDB sudah aktif (lokal atau Atlas) sebelum menjalankan backend.
 - Ini adalah project based learning
+
